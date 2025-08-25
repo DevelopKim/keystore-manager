@@ -77,15 +77,22 @@ React Native 프로젝트에서 Android 서명 키(Keystore) 정보를 체계적
 - `*_UPLOAD_KEY_ALIAS`: 키 별칭
 - `*_UPLOAD_KEY_PASSWORD`: 키 비밀번호
 
-## 📝 gradle.properties 저장 형식
+### React Native 공식 가이드
+
+이 스크립트는 [React Native 공식 문서의 Gradle 변수 설정 가이드](https://reactnative.dev/docs/signed-apk-android#setting-up-gradle-variables)를 기반으로 만들어졌습니다.
+
+공식 문서에 따르면, 키스토어 정보는 `~/.gradle/gradle.properties` 파일에 다음과 같이 설정해야 합니다:
 
 ```properties
-# com.example.app - update 2024-01-15 14:30:25
-MYAPP_UPLOAD_STORE_FILE=/path/to/keystore.jks
-MYAPP_UPLOAD_STORE_PASSWORD=your_store_password
-MYAPP_UPLOAD_KEY_ALIAS=your_key_alias
-MYAPP_UPLOAD_KEY_PASSWORD=your_key_password
+MYAPP_UPLOAD_STORE_FILE=my-upload-key.keystore
+MYAPP_UPLOAD_KEY_ALIAS=my-key-alias
+MYAPP_UPLOAD_STORE_PASSWORD=*****
+MYAPP_UPLOAD_KEY_PASSWORD=*****
 ```
+
+**보안 참고사항**: 
+- `~/.gradle/gradle.properties`에 저장하면 Git에 체크인되지 않아 보안상 안전합니다.
+- macOS에서는 Keychain Access 앱을 사용하여 비밀번호를 저장할 수도 있습니다.
 
 ## ⚠️ 주의사항
 
