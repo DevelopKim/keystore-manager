@@ -314,6 +314,230 @@ check_keystore_alias() {
     fi
 }
 
+# 개별 프로젝트 백업 처리
+process_project_backup() {
+    local backup_dir="$1"
+    local namespace="$2"
+    local config="$3"
+    local keystore_file="$4"
+    
+    local project_backup_dir="$backup_dir/$namespace"
+    mkdir -p "$project_backup_dir"
+    
+    # 키스토어 파일 복사
+    if [ -n "$keystore_file" ] && [ -f "$keystore_file" ]; then
+        cp "$keystore_file" "$project_backup_dir/keystore.jks"
+        log_success "키스토어 파일 복사: $keystore_file"
+    else
+        log_warning "키스토어 파일을 찾을 수 없습니다: $keystore_file"
+    fi
+    
+    # 설정 정보 저장
+    echo -e "$config" > "$project_backup_dir/gradle-config.txt"
+    
+    # 메타데이터에 추가 (전역 변수 사용)
+    if [ $project_count -gt 0 ]; then
+        backup_metadata+=",\n"
+    fi
+    backup_metadata+="    {\n"
+    backup_metadata+="      \"namespace\": \"$namespace\",\n"
+    backup_metadata+="      \"keystore_file\": \"$keystore_file\",\n"
+    backup_metadata+="      \"backup_path\": \"$project_backup_dir\"\n"
+    backup_metadata+="    }"
+}
+
+# 모든 프로젝트 키스토어 복원
+restore_all_keystores() {
+    local test_mode=false
+    
+    # 테스트 모드 확인
+    if [ "$1" = "--test" ]; then
+        test_mode=true
+        log_info "테스트 모드로 복원을 시작합니다..."
+    else
+        log_info "모든 프로젝트 키스토어 복원을 시작합니다..."
+    fi
+    
+    # 백업 디렉토리 확인
+    local backup_dir="$HOME/.keystore-backups/latest"
+    if [ ! -L "$backup_dir" ]; then
+        log_error "최신 백업을 찾을 수 없습니다: $backup_dir"
+        exit 1
+    fi
+    
+    local actual_backup_dir=$(readlink "$backup_dir")
+    if [ ! -d "$actual_backup_dir" ]; then
+        log_error "백업 디렉토리가 존재하지 않습니다: $actual_backup_dir"
+        exit 1
+    fi
+    
+    log_info "백업 디렉토리: $actual_backup_dir"
+    
+    # 메타데이터 파일 확인
+    local metadata_file="$actual_backup_dir/backup-metadata.json"
+    if [ ! -f "$metadata_file" ]; then
+        log_error "백업 메타데이터 파일을 찾을 수 없습니다: $metadata_file"
+        exit 1
+    fi
+    
+    # 각 프로젝트 복원
+    local project_count=0
+    local success_count=0
+    
+    # 프로젝트 디렉토리들 찾기
+    for project_dir in "$actual_backup_dir"/*/; do
+        if [ -d "$project_dir" ]; then
+            local namespace=$(basename "$project_dir")
+            
+            # 메타데이터에서 원본 키스토어 파일 경로 찾기
+            local original_keystore_file=$(grep -A 5 "\"namespace\": \"$namespace\"" "$metadata_file" | grep "\"keystore_file\":" | sed 's/.*"keystore_file": "\([^"]*\)".*/\1/')
+            
+            if [ -n "$original_keystore_file" ]; then
+                log_info "프로젝트 복원 중: $namespace"
+                
+                # 원본 파일명 추출
+                local original_filename=$(basename "$original_keystore_file")
+                local original_dir=$(dirname "$original_keystore_file")
+                
+                # 테스트 모드일 때 .restore 추가
+                local restore_filename="$original_filename"
+                if [ "$test_mode" = true ]; then
+                    restore_filename="${original_filename}.restore"
+                fi
+                
+                local restore_path="$original_dir/$restore_filename"
+                
+                # 디렉토리 생성
+                mkdir -p "$original_dir"
+                
+                # 키스토어 파일 복원
+                local backup_keystore="$project_dir/keystore.jks"
+                if [ -f "$backup_keystore" ]; then
+                    if cp "$backup_keystore" "$restore_path"; then
+                        log_success "키스토어 파일 복원: $restore_path"
+                        ((success_count++))
+                    else
+                        log_error "키스토어 파일 복원 실패: $restore_path"
+                    fi
+                else
+                    log_warning "백업된 키스토어 파일을 찾을 수 없습니다: $backup_keystore"
+                fi
+                
+                # gradle 설정 복원 (테스트 모드가 아닐 때만)
+                if [ "$test_mode" = false ]; then
+                    local gradle_config="$project_dir/gradle-config.txt"
+                    if [ -f "$gradle_config" ]; then
+                        # 기존 gradle.properties에서 해당 프로젝트 섹션 제거
+                        local gradle_props="$HOME/.gradle/gradle.properties"
+                        if [ -f "$gradle_props" ]; then
+                            # namespace 섹션 제거
+                            sed -i '' "/# $namespace/,/^# [^-]/d" "$gradle_props"
+                            sed -i '' "/# $namespace$/d" "$gradle_props"
+                        fi
+                        
+                        # 새 설정 추가
+                        cat "$gradle_config" >> "$gradle_props"
+                        log_success "Gradle 설정 복원: $namespace"
+                    fi
+                fi
+                
+                ((project_count++))
+            fi
+        fi
+    done
+    
+    log_success "복원이 완료되었습니다!"
+    log_info "처리된 프로젝트 수: $project_count"
+    log_info "성공적으로 복원된 프로젝트 수: $success_count"
+    
+    if [ "$test_mode" = true ]; then
+        log_info "테스트 모드: 키스토어 파일들이 .restore 확장자로 복원되었습니다."
+        log_info "실제 복원을 원하시면 --test 플래그 없이 실행하세요."
+    fi
+}
+
+# 모든 프로젝트 키스토어 백업
+backup_all_keystores() {
+    log_info "모든 프로젝트 키스토어 백업을 시작합니다..."
+    
+    local gradle_props="$HOME/.gradle/gradle.properties"
+    
+    if [ ! -f "$gradle_props" ]; then
+        log_error "gradle.properties 파일이 없습니다: $gradle_props"
+        exit 1
+    fi
+    
+    # 백업 디렉토리 생성
+    local backup_dir="$HOME/.keystore-backups/$(date '+%Y-%m-%d_%H-%M-%S')"
+    mkdir -p "$backup_dir"
+    
+    log_info "백업 디렉토리: $backup_dir"
+    
+    # gradle.properties에서 프로젝트 섹션 찾기
+    local project_count=0
+    local backup_metadata=""
+    backup_metadata+="{\n"
+    backup_metadata+="  \"backup_date\": \"$(date '+%Y-%m-%d %H:%M:%S')\",\n"
+    backup_metadata+="  \"projects\": [\n"
+    
+    # 각 프로젝트 섹션 처리
+    local in_project_section=false
+    local current_namespace=""
+    local current_config=""
+    local current_keystore_file=""
+    
+    while IFS= read -r line; do
+        # 프로젝트 섹션 시작 확인
+        if [[ $line =~ ^#\ ([a-zA-Z0-9_.]+)\ -\ update ]]; then
+            # 이전 프로젝트가 있으면 처리
+            if [ "$in_project_section" = true ] && [ -n "$current_namespace" ]; then
+                process_project_backup "$backup_dir" "$current_namespace" "$current_config" "$current_keystore_file"
+                ((project_count++))
+            fi
+            
+            # 새 프로젝트 시작
+            current_namespace="${BASH_REMATCH[1]}"
+            current_config="$line\n"
+            current_keystore_file=""
+            in_project_section=true
+            
+            log_info "프로젝트 백업 중: $current_namespace"
+        elif [ "$in_project_section" = true ]; then
+            # 프로젝트 섹션 내부
+            current_config+="$line\n"
+            
+            # 키스토어 파일 경로 추출
+            if [[ $line =~ ^[A-Z0-9_]+_UPLOAD_STORE_FILE=(.+)$ ]]; then
+                current_keystore_file="${BASH_REMATCH[1]}"
+            fi
+        fi
+    done < "$gradle_props"
+    
+    # 마지막 프로젝트 처리
+    if [ "$in_project_section" = true ] && [ -n "$current_namespace" ]; then
+        process_project_backup "$backup_dir" "$current_namespace" "$current_config" "$current_keystore_file"
+        ((project_count++))
+    fi
+    
+    # 메타데이터 완성
+    backup_metadata+="\n  ],\n"
+    backup_metadata+="  \"total_projects\": $project_count\n"
+    backup_metadata+="}\n"
+    
+    # 메타데이터 저장
+    echo -e "$backup_metadata" > "$backup_dir/backup-metadata.json"
+    
+    # 최신 백업 심볼릭 링크 생성
+    local latest_link="$HOME/.keystore-backups/latest"
+    rm -f "$latest_link"
+    ln -s "$backup_dir" "$latest_link"
+    
+    log_success "백업이 완료되었습니다!"
+    log_info "백업된 프로젝트 수: $project_count"
+    log_info "백업 위치: $backup_dir"
+    log_info "최신 백업 링크: $latest_link"
+}
+
 # 도움말
 show_help() {
     echo "Android Keystore 관리 스크립트"
@@ -324,12 +548,18 @@ show_help() {
     echo "  --init, -i               키스토어 정보 초기 설정"
     echo "  --check, -c              현재 키스토어 정보 확인"
     echo "  --alias, -l              키스토어 alias 확인"
+    echo "  --backup, -b             모든 프로젝트 키스토어 백업"
+    echo "  --restore, -r            모든 프로젝트 키스토어 복원"
+    echo "  --restore --test         테스트 모드로 복원 (.restore 확장자)"
     echo "  --help, -h               도움말 표시"
     echo ""
     echo "예시:"
     echo "  ./keystore-manager --init"
     echo "  ./keystore-manager -c"
     echo "  ./keystore-manager --alias"
+    echo "  ./keystore-manager --backup"
+    echo "  ./keystore-manager --restore --test"
+    echo "  ./keystore-manager --restore"
     echo ""
     echo "주의:"
     echo "  - React Native 프로젝트 최상위 폴더에서 실행해야 합니다."
@@ -346,6 +576,12 @@ case "$1" in
         ;;
     "--alias"|"-l"|"alias")
         check_keystore_alias
+        ;;
+    "--backup"|"-b")
+        backup_all_keystores
+        ;;
+    "--restore"|"-r")
+        restore_all_keystores "$2"
         ;;
     "--help"|"-h"|"help"|"")
         show_help
