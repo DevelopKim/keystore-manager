@@ -8,6 +8,8 @@ A Bash script for systematically managing Android signing key (Keystore) informa
 - **Keystore Information Check**: Verifies current keystore configuration status
 - **Keystore Alias Check**: Extracts and verifies alias information from keystore files
 - **Automatic Keystore File Search**: Automatically finds and suggests `.jks` files in the `android/app/` folder
+- **Keystore Backup**: Safely backs up keystore files and settings for all projects
+- **Keystore Restore**: Safely restores backed up keystores to original paths and filenames
 
 ## 📋 Requirements
 
@@ -30,6 +32,9 @@ A Bash script for systematically managing Android signing key (Keystore) informa
 | `--init`, `-i` | Initialize keystore information |
 | `--check`, `-c` | Check current keystore information |
 | `--alias`, `-l` | Check keystore alias |
+| `--backup`, `-b` | Backup all project keystores |
+| `--restore`, `-r` | Restore all project keystores |
+| `--restore --test` | Restore in test mode (.restore extension) |
 | `--help`, `-h` | Show help |
 
 ### Usage Examples
@@ -59,6 +64,31 @@ A Bash script for systematically managing Android signing key (Keystore) informa
 - Extracts alias information from selected keystore file
 - Uses `keytool` command to verify alias
 
+#### 4. Backup Keystores
+```bash
+./keystore-manager.sh --backup
+```
+- Automatically parses all project information from `~/.gradle/gradle.properties`
+- Backs up keystore files and gradle settings with timestamps
+- Manages backup information systematically with JSON metadata
+- Automatically creates symbolic link to latest backup
+
+#### 5. Restore Keystores (Test Mode)
+```bash
+./keystore-manager.sh --restore --test
+```
+- Safely restores backed up keystores with `.restore` extension
+- Tests restoration process without affecting actual files
+- Restores to original filenames and paths (with extension added)
+
+#### 6. Restore Keystores (Actual Restore)
+```bash
+./keystore-manager.sh --restore
+```
+- Restores backed up keystores to original paths and filenames
+- Also restores gradle.properties settings
+- **Warning**: May overwrite existing files, so test mode is recommended first
+
 ## 📁 File Structure
 
 ### Input Files
@@ -67,6 +97,9 @@ A Bash script for systematically managing Android signing key (Keystore) informa
 
 ### Output Files
 - `~/.gradle/gradle.properties`: Keystore information storage
+- `~/.keystore-backups/`: Backup file storage directory
+  - `YYYY-MM-DD_HH-MM-SS/`: Timestamp-based backups
+  - `latest/`: Symbolic link to latest backup
 
 ## 🔧 Supported Keystore Variables
 
@@ -102,6 +135,7 @@ MYAPP_UPLOAD_KEY_PASSWORD=*****
    - `android/app/build.gradle`
 3. **Permissions**: Script execution permissions are required.
 4. **Security**: Keystore passwords are stored in plain text in `~/.gradle/gradle.properties`.
+5. **Backup/Restore**: Restoration may overwrite existing files, so use test mode first.
 
 ## 🔒 Security Considerations
 

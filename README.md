@@ -8,6 +8,8 @@ React Native 프로젝트에서 Android 서명 키(Keystore) 정보를 체계적
 - **키스토어 정보 확인**: 현재 프로젝트의 키스토어 설정 상태를 확인
 - **키스토어 alias 확인**: 키스토어 파일에서 alias 정보를 추출하여 확인
 - **자동 키스토어 파일 검색**: `android/app/` 폴더에서 `.jks` 파일을 자동으로 찾아 제안
+- **키스토어 백업**: 모든 프로젝트의 키스토어 파일과 설정을 안전하게 백업
+- **키스토어 복원**: 백업된 키스토어를 원본 경로와 파일명으로 안전하게 복원
 
 ## 📋 요구사항
 
@@ -30,6 +32,9 @@ React Native 프로젝트에서 Android 서명 키(Keystore) 정보를 체계적
 | `--init`, `-i` | 키스토어 정보 초기 설정 |
 | `--check`, `-c` | 현재 키스토어 정보 확인 |
 | `--alias`, `-l` | 키스토어 alias 확인 |
+| `--backup`, `-b` | 모든 프로젝트 키스토어 백업 |
+| `--restore`, `-r` | 모든 프로젝트 키스토어 복원 |
+| `--restore --test` | 테스트 모드로 복원 (.restore 확장자) |
 | `--help`, `-h` | 도움말 표시 |
 
 ### 사용 예시
@@ -59,6 +64,31 @@ React Native 프로젝트에서 Android 서명 키(Keystore) 정보를 체계적
 - 선택한 키스토어 파일의 alias 정보 추출
 - `keytool` 명령어를 사용하여 alias 확인
 
+#### 4. 키스토어 백업
+```bash
+./keystore-manager.sh --backup
+```
+- `~/.gradle/gradle.properties`에서 모든 프로젝트 정보 자동 파싱
+- 키스토어 파일과 gradle 설정을 타임스탬프별로 백업
+- JSON 메타데이터로 백업 정보 체계적 관리
+- 최신 백업 심볼릭 링크 자동 생성
+
+#### 5. 키스토어 복원 (테스트 모드)
+```bash
+./keystore-manager.sh --restore --test
+```
+- 백업된 키스토어를 `.restore` 확장자로 안전하게 복원
+- 실제 파일에 영향 없이 복원 과정 테스트
+- 원본 파일명과 경로 그대로 복원 (확장자만 추가)
+
+#### 6. 키스토어 복원 (실제 복원)
+```bash
+./keystore-manager.sh --restore
+```
+- 백업된 키스토어를 원본 경로와 파일명으로 복원
+- gradle.properties 설정도 함께 복원
+- **주의**: 기존 파일을 덮어쓸 수 있으므로 테스트 모드 먼저 실행 권장
+
 ## 📁 파일 구조
 
 ### 입력 파일
@@ -67,6 +97,9 @@ React Native 프로젝트에서 Android 서명 키(Keystore) 정보를 체계적
 
 ### 출력 파일
 - `~/.gradle/gradle.properties`: 키스토어 정보 저장
+- `~/.keystore-backups/`: 백업 파일 저장 디렉토리
+  - `YYYY-MM-DD_HH-MM-SS/`: 타임스탬프별 백업
+  - `latest/`: 최신 백업 심볼릭 링크
 
 ## 🔧 지원하는 키스토어 변수
 
@@ -102,6 +135,7 @@ MYAPP_UPLOAD_KEY_PASSWORD=*****
    - `android/app/build.gradle`
 3. **권한**: 스크립트 실행 권한이 필요합니다.
 4. **보안**: 키스토어 비밀번호는 `~/.gradle/gradle.properties`에 평문으로 저장됩니다.
+5. **백업/복원**: 복원 시 기존 파일을 덮어쓸 수 있으므로 테스트 모드를 먼저 사용하세요.
 
 ## 🔒 보안 고려사항
 

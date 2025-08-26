@@ -8,16 +8,9 @@ Android Keystore Manager의 향후 개발 계획과 추가 기능들입니다.
 
 ## 🚀 계획된 기능들
 
-### 1. 키스토어 생성 기능
-```bash
-./keystore-manager.sh --generate
-```
-- 새로운 키스토어 파일 자동 생성
-- `keytool` 명령어를 래핑하여 사용자 친화적으로
-- 생성된 키스토어를 `android/app/`에 자동 배치
-- 키스토어 생성 시 필요한 모든 정보를 대화형으로 입력받음
 
-### 2. 키스토어 백업/복원
+
+### 키스토어 백업/복원
 ```bash
 ./keystore-manager.sh --backup
 ./keystore-manager.sh --restore
@@ -27,7 +20,7 @@ Android Keystore Manager의 향후 개발 계획과 추가 기능들입니다.
 - 백업 파일 암호화 지원
 - 클라우드 스토리지 연동 (선택사항)
 
-### 3. 키스토어 유효성 검증
+### 키스토어 유효성 검증
 ```bash
 ./keystore-manager.sh --validate
 ```
@@ -36,7 +29,7 @@ Android Keystore Manager의 향후 개발 계획과 추가 기능들입니다.
 - 서명 설정이 올바른지 검증
 - 빌드 전 사전 검증으로 문제 예방
 
-### 4. 빌드 자동화 통합
+### 빌드 자동화 통합
 ```bash
 ./keystore-manager.sh --build-release
 ```
@@ -45,7 +38,7 @@ Android Keystore Manager의 향후 개발 계획과 추가 기능들입니다.
 - 빌드 결과 검증 및 성공/실패 알림
 - AAB/APK 파일 생성 확인
 
-### 5. 팀 협업 기능
+### 팀 협업 기능
 ```bash
 ./keystore-manager.sh --share-config
 ./keystore-manager.sh --import-config
@@ -55,7 +48,7 @@ Android Keystore Manager의 향후 개발 계획과 추가 기능들입니다.
 - 팀 공통 설정 파일 관리
 - Git hooks와 연동하여 설정 동기화
 
-### 6. 키스토어 정보 암호화
+### 키스토어 정보 암호화
 ```bash
 ./keystore-manager.sh --encrypt
 ```
@@ -64,7 +57,7 @@ Android Keystore Manager의 향후 개발 계획과 추가 기능들입니다.
 - 시스템 키체인 연동 (macOS Keychain, Windows Credential Manager)
 - 환경 변수 기반 암호화 키 관리
 
-### 7. 다중 환경 지원
+### 다중 환경 지원
 ```bash
 ./keystore-manager.sh --env production
 ./keystore-manager.sh --env staging
@@ -74,7 +67,7 @@ Android Keystore Manager의 향후 개발 계획과 추가 기능들입니다.
 - 환경 전환 시 자동 설정 적용
 - 환경별 키스토어 파일 관리
 
-### 8. 키스토어 만료 알림
+### 키스토어 만료 알림
 ```bash
 ./keystore-manager.sh --check-expiry
 ```
@@ -83,7 +76,7 @@ Android Keystore Manager의 향후 개발 계획과 추가 기능들입니다.
 - 자동 만료 알림 스케줄링
 - 만료 대응 가이드 제공
 
-### 9. Google Play Console 연동
+### Google Play Console 연동
 ```bash
 ./keystore-manager.sh --upload-key
 ```
@@ -92,7 +85,7 @@ Android Keystore Manager의 향후 개발 계획과 추가 기능들입니다.
 - Google Play API 연동 (선택사항)
 - 업로드 키 상태 모니터링
 
-### 10. 키스토어 마이그레이션 도구
+### 키스토어 마이그레이션 도구
 ```bash
 ./keystore-manager.sh --migrate
 ```
@@ -104,20 +97,19 @@ Android Keystore Manager의 향후 개발 계획과 추가 기능들입니다.
 ## 📊 우선순위
 
 ### 높은 우선순위 (v2.0)
-1. **키스토어 생성 기능** - 처음 시작할 때 가장 필요
-2. **유효성 검증** - 빌드 전에 문제 미리 확인
-3. **빌드 자동화** - 설정 확인 후 바로 빌드
-4. **백업/복원** - 키스토어 손실 방지
+1. **유효성 검증** - 빌드 전에 문제 미리 확인
+2. **빌드 자동화** - 설정 확인 후 바로 빌드
+3. **백업/복원** - 키스토어 손실 방지
+4. **다중 환경 지원** - 팀 개발 환경에서 유용
 
 ### 중간 우선순위 (v2.1)
-5. **다중 환경 지원** - 팀 개발 환경에서 유용
-6. **키스토어 만료 알림** - 장기 운영 시 필요
-7. **팀 협업 기능** - 팀 프로젝트에서 유용
+5. **키스토어 만료 알림** - 장기 운영 시 필요
+6. **팀 협업 기능** - 팀 프로젝트에서 유용
 
 ### 낮은 우선순위 (v3.0)
-8. **키스토어 정보 암호화** - 보안 강화
-9. **Google Play Console 연동** - 고급 기능
-10. **키스토어 마이그레이션 도구** - 특수 상황
+7. **키스토어 정보 암호화** - 보안 강화
+8. **Google Play Console 연동** - 고급 기능
+9. **키스토어 마이그레이션 도구** - 특수 상황
 
 ## 🔧 기술적 고려사항
 
