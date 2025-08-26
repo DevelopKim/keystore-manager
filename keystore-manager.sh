@@ -153,7 +153,7 @@ update_gradle_properties() {
     # 기존 namespace 정보 제거
     if [ -f "$gradle_props" ]; then
         # namespace 섹션 시작부터 다음 섹션 시작까지 제거
-        sed -i '' "/# $namespace/,/^# [^-]/d" "$gradle_props"
+        sed -i '' "/# $namespace/,/^# [a-zA-Z0-9_.]/d" "$gradle_props"
         # 마지막 줄이 namespace 섹션이면 제거
         sed -i '' "/# $namespace$/d" "$gradle_props"
     fi
@@ -227,7 +227,7 @@ check_keystore() {
         exit 1
     fi
     
-    # namespace 섹션 찾기
+    # namespace 섹션 찾기 (namespace - update 형태 포함)
     local start_line=$(grep -n "^# $namespace" "$gradle_props" | cut -d: -f1)
     
     if [ -z "$start_line" ]; then
@@ -430,9 +430,9 @@ restore_all_keystores() {
                         # 기존 gradle.properties에서 해당 프로젝트 섹션 제거
                         local gradle_props="$HOME/.gradle/gradle.properties"
                         if [ -f "$gradle_props" ]; then
-                            # namespace 섹션 제거
-                            sed -i '' "/# $namespace/,/^# [^-]/d" "$gradle_props"
-                            sed -i '' "/# $namespace$/d" "$gradle_props"
+                                                    # namespace 섹션 제거
+                        sed -i '' "/# $namespace/,/^# [a-zA-Z0-9_.]/d" "$gradle_props"
+                        sed -i '' "/# $namespace$/d" "$gradle_props"
                         fi
                         
                         # 새 설정 추가
